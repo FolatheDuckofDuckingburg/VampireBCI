@@ -58,6 +58,20 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(int(frame.loc[0, "Y"]), 1)
         self.assertAlmostEqual(float(frame.loc[0, "L_s"]), 2.0)
 
+    def test_fractional_selected_target_is_rejected_not_truncated(self):
+        data = synthetic_data()
+        data["SelectedTarget"] = data["SelectedTarget"].astype(float)
+        data["SelectedTarget"][25] = 9.5
+        with self.assertRaisesRegex(ExtractionError, "SelectedTarget=.*integer cell ID"):
+            extract_arrays(data, 10, filename="M_05_SE001_ADdiff_Test01.edf")
+
+    def test_fractional_current_target_is_rejected_not_truncated(self):
+        data = synthetic_data()
+        data["CurrentTarget"] = data["CurrentTarget"].astype(float)
+        data["CurrentTarget"][29] = 9.5
+        with self.assertRaisesRegex(ExtractionError, "CurrentTarget=.*integer cell ID"):
+            extract_arrays(data, 10, filename="M_05_SE001_ADdiff_Test01.edf")
+
     def test_missing_target_is_rejected_not_scored_incorrect(self):
         data = synthetic_data()
         data["CurrentTarget"][:] = 0
