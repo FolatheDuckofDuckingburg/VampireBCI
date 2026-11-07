@@ -43,6 +43,12 @@ class ExtractionTests(unittest.TestCase):
         with self.assertRaises(ExtractionError):
             decode_cell(65)
 
+    def test_decode_rejects_non_integer_cell_ids_without_truncating(self):
+        for value in (1.5, 9.9, True, "9"):
+            with self.subTest(value=value):
+                with self.assertRaises(ExtractionError):
+                    decode_cell(value)
+
     def test_extracts_trial_and_correctness(self):
         frame = extract_arrays(
             synthetic_data(), 10,
