@@ -170,7 +170,11 @@ def extract_arrays(
         selection_i = int(trial_selections[0])
         # SelectedTarget may remain nonzero after its onset; use the value at
         # the event, and validate it rather than silently accepting invalid IDs.
-        selected_cell = int(arrays["SelectedTarget"][selection_i])
+        selection_end = selection_i + 1
+        selected_signal = arrays["SelectedTarget"]
+        while selection_end < len(selected_signal) and selected_signal[selection_end] != 0:
+            selection_end += 1
+        selected_cell = int(np.max(selected_signal[selection_i:selection_end]))
         if not 1 <= selected_cell <= N_CELLS:
             raise ExtractionError(
                 f"trial {trial_index}: SelectedTarget={selected_cell} is outside 1..{N_CELLS}"
