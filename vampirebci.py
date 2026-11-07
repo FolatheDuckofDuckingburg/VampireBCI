@@ -38,8 +38,13 @@ def _rising_edges(signal: np.ndarray) -> np.ndarray:
 
 
 def decode_cell(cell_index: int) -> tuple[int, int]:
-    """Decode a 1-indexed 1..64 cell into 1-indexed (row, column)."""
-    cell_index = int(cell_index)
+    """Decode an integer 1-indexed 1..64 cell into 1-indexed (row, column)."""
+    if isinstance(cell_index, (bool, np.bool_)) or not isinstance(
+        cell_index, (int, np.integer)
+    ):
+        raise ExtractionError(
+            f"cell index must be an integer in 1..{N_CELLS}; got {cell_index!r}"
+        )
     if not 1 <= cell_index <= N_CELLS:
         raise ExtractionError(
             f"cell index must be in 1..{N_CELLS}; got {cell_index}"
