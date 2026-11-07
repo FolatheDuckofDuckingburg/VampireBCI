@@ -52,6 +52,20 @@ def decode_cell(cell_index: int) -> tuple[int, int]:
     return (cell_index - 1) // GRID_COLS + 1, (cell_index - 1) % GRID_COLS + 1
 
 
+def _validated_cell_value(value: float | int, channel: str, trial_index: int) -> int:
+    """Validate an EDF event value without silently truncating fractional IDs."""
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, (int, float, np.integer, np.floating))
+        or not np.isfinite(value)
+        or not float(value).is_integer()
+    ):
+        raise ExtractionError(
+            f"trial {trial_index}: {channel}={value!r} is not an integer cell ID"
+        )
+    return int(value)
+
+
 def parse_filename(path: str | os.PathLike[str]) -> tuple[str, str, str]:
     """Parse names such as M_05_SE001_ADdiff_Test01.edf."""
     name = Path(path).name
@@ -179,7 +193,10 @@ def extract_arrays(
         selected_signal = arrays["SelectedTarget"]
         while selection_end < len(selected_signal) and selected_signal[selection_end] != 0:
             selection_end += 1
-        selected_cell = int(np.max(selected_signal[selection_i:selection_end]))
+        selected_value = np.max(selected_signal[selection_i:selection_end])
+        selected_cell = _validated_cell_value(
+            selected_value, "SelectedTarget", trial_index
+        )
         if not 1 <= selected_cell <= N_CELLS:
             raise ExtractionError(
                 f"trial {trial_index}: SelectedTarget={selected_cell} is outside 1..{N_CELLS}"
@@ -192,7 +209,9 @@ def extract_arrays(
                 f"trial {trial_index}: CurrentTarget has no nonzero target label "
                 "in this trial interval; correctness cannot be determined"
             )
-        true_target = int(nonzero_targets[-1])
+        true_target = _validated_cell_value(
+            nonzero_targets[-1], "CurrentTarget", trial_index
+        )
         if not 1 <= true_target <= N_CELLS:
             raise ExtractionError(
                 f"trial {trial_index}: CurrentTarget={true_target} is outside 1..{N_CELLS}"
