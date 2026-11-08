@@ -43,6 +43,12 @@ class ExtractionTests(unittest.TestCase):
         with self.assertRaises(ExtractionError):
             decode_cell(65)
 
+    def test_decode_rejects_non_integer_cell_ids_without_truncating(self):
+        for value in (1.5, 9.9, True, "9"):
+            with self.subTest(value=value):
+                with self.assertRaises(ExtractionError):
+                    decode_cell(value)
+
     def test_extracts_trial_and_correctness(self):
         frame = extract_arrays(
             synthetic_data(), 10,
@@ -51,6 +57,20 @@ class ExtractionTests(unittest.TestCase):
         self.assertEqual(len(frame), 1)
         self.assertEqual(int(frame.loc[0, "Y"]), 1)
         self.assertAlmostEqual(float(frame.loc[0, "L_s"]), 2.0)
+
+    def test_fractional_selected_target_is_rejected_not_truncated(self):
+        data = synthetic_data()
+        data["SelectedTarget"] = data["SelectedTarget"].astype(float)
+        data["SelectedTarget"][25] = 9.5
+        with self.assertRaisesRegex(ExtractionError, "SelectedTarget=.*integer cell ID"):
+            extract_arrays(data, 10, filename="M_05_SE001_ADdiff_Test01.edf")
+
+    def test_fractional_current_target_is_rejected_not_truncated(self):
+        data = synthetic_data()
+        data["CurrentTarget"] = data["CurrentTarget"].astype(float)
+        data["CurrentTarget"][29] = 9.5
+        with self.assertRaisesRegex(ExtractionError, "CurrentTarget=.*integer cell ID"):
+            extract_arrays(data, 10, filename="M_05_SE001_ADdiff_Test01.edf")
 
     def test_missing_target_is_rejected_not_scored_incorrect(self):
         data = synthetic_data()
